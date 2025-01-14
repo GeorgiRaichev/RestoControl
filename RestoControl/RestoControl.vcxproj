@@ -127,7 +127,21 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="RestoControl.cpp" />
+    <ClCompile Include="inventory.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="menu.cpp" />
+    <ClCompile Include="order.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="inventory.h" />
+    <ClInclude Include="menu.h" />
+    <ClInclude Include="order.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="inventory.txt" />
+    <Text Include="menu.txt" />
+    <Text Include="orders.txt" />
+    <Text Include="report.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
