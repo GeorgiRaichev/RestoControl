@@ -28,3 +28,27 @@ void displayMenu() {
 
     file.close();
 }
+
+// Function to add a new item to the menu
+void addItemToMenu() {
+    ofstream menuFile("menu.txt", ios::app);  // Append to the end of the file
+
+    if (!menuFile) {
+        cout << "Error: Unable to open menu file.\n";
+        return;
+    }
+
+    string itemName;
+    double itemPrice;
+
+    cout << "Enter item name: ";
+    cin >> itemName;
+    cout << "Enter item price: ";
+    cin >> itemPrice;
+
+    // Write to the menu
+    menuFile << itemName << " " << itemPrice << endl;
+    cout << itemName << " added to the menu for " << itemPrice << " lv.\n";
+
+    menuFile.close();
+}
