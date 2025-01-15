@@ -329,3 +329,44 @@ void generateReport() {
 		<< ": " << totalRevenue << " lv.\n";
 	cout << "Orders have been cleared.\n";
 }
+
+void viewTotalRevenueByDate() {
+	ifstream reportFile("report.txt");
+
+	if (!reportFile) {
+		cout << "Error: Report file not found.\n";
+		return;
+	}
+
+	int startDay, startMonth, startYear;
+	char slash;
+
+	cout << "Enter start date (dd/mm/yyyy): ";
+	cin >> startDay >> slash >> startMonth >> slash >> startYear;
+
+	string line;
+	bool found = false;
+
+	cout << "\n--- Reports from " << startDay << "/" << startMonth << "/" << startYear << " to now ---\n";
+
+	while (getline(reportFile, line)) {
+		int reportDay, reportMonth, reportYear;
+		double revenue;
+
+		sscanf_s(line.c_str(), "Date: %d/%d/%d - Total Revenue: %lf lv.",
+			&reportDay, &reportMonth, &reportYear, &revenue);
+
+		if (reportYear > startYear ||
+			(reportYear == startYear && reportMonth > startMonth) ||
+			(reportYear == startYear && reportMonth == startMonth && reportDay >= startDay)) {
+			cout << line << endl;
+			found = true;
+		}
+	}
+
+	if (!found) {
+		cout << "No reports found from this date.\n";
+	}
+
+	reportFile.close();
+}
