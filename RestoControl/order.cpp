@@ -146,3 +146,21 @@ struct OrderItem {
 	string name;
 	int count = 0;
 };
+
+// Function to sort orders alphabetically (Selection Sort)
+void sortOrders(OrderItem orders[], int orderCount) {
+	for (int i = 0; i < orderCount - 1; i++) {
+		int minIndex = i;
+		for (int j = i + 1; j < orderCount; j++) {
+			if (orders[j].name < orders[minIndex].name) {
+				minIndex = j;
+			}
+		}
+		// Swap if a smaller element is found
+		if (minIndex != i) {
+			OrderItem temp = orders[i];
+			orders[i] = orders[minIndex];
+			orders[minIndex] = temp;
+		}
+	}
+}
