@@ -260,3 +260,72 @@ void viewDailyRevenue() {
 	cout << "\n--- Daily Revenue ---\n";
 	cout << "Total Revenue: " << totalRevenue << " lv.\n";
 }
+// Function to generate a daily report
+void generateReport() {
+	
+	ifstream orderFile("orders.txt");
+
+	if (!orderFile) {
+		cout << "Error: Orders file not found.\n";
+		return;
+	}
+
+	double totalRevenue = 0;
+	string item;
+	double price;
+	string currency;  
+
+	// Calculate total revenue
+	while (orderFile >> item >> price >> currency) {
+		// Validate that the currency is "lv."
+		if (currency != "lv.") {
+			cout << "Warning: Unexpected currency '" << currency << "' for item '" << item << "'. Skipping this entry.\n";
+			continue;
+		}
+
+		totalRevenue += price;
+	}
+
+	// Check for any read errors (optional)
+	if (orderFile.bad()) {
+		cout << "Error: An I/O error occurred while reading the orders file.\n";
+		orderFile.close();
+		return;
+	}
+
+	orderFile.close();
+
+	// Get current date using localtime_s
+	time_t now = time(0);
+	tm ltm;
+	localtime_s(&ltm, &now);
+
+	int day = ltm.tm_mday;
+	int month = 1 + ltm.tm_mon;
+	int year = 1900 + ltm.tm_year;
+
+	// Write the report to file
+	ofstream reportFile("report.txt", ios::app);
+	if (!reportFile) {
+		cout << "Error: Unable to create or open report file.\n";
+		return;
+	}
+
+	reportFile << "Date: " << day << "/" << month << "/" << year
+		<< " - Total Revenue: " << totalRevenue << " lv.\n";
+	reportFile.close();
+
+	// Clear orders.txt (reset daily revenue)
+	ofstream clearOrders("orders.txt", ofstream::trunc);
+	if (!clearOrders) {
+		cout << "Error: Unable to clear orders file.\n";
+		return;
+	}
+	clearOrders.close();
+
+	// Display the result
+	cout << "\n--- Report Generated ---\n";
+	cout << "Total Revenue for " << day << "/" << month << "/" << year
+		<< ": " << totalRevenue << " lv.\n";
+	cout << "Orders have been cleared.\n";
+}
