@@ -116,3 +116,33 @@ void cancelOrder() {
 		return;
 	}
 }
+
+// Function to view all past orders
+void viewOrders() {
+	ifstream orderFile("orders.txt");
+
+	if (!orderFile) {
+		cout << "Error: Orders file not found.\n";
+		return;
+	}
+
+	string line;
+	bool hasOrders = false;
+
+	cout << "\n--- Past Orders ---\n";
+	while (getline(orderFile, line)) {
+		cout << line << endl;
+		hasOrders = true;
+	}
+
+	if (!hasOrders) {
+		cout << "No orders found.\n";
+	}
+
+	orderFile.close();
+}
+
+struct OrderItem {
+	string name;
+	int count = 0;
+};
