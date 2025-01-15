@@ -164,3 +164,60 @@ void sortOrders(OrderItem orders[], int orderCount) {
 		}
 	}
 }
+
+void viewSortedOrders() {
+	ifstream orderFile("orders.txt");
+
+	if (!orderFile) {
+		cout << "Error: Orders file not found.\n";
+		return;
+	}
+
+	OrderItem orders[100];  // Array to store orders
+	int orderCount = 0;
+
+	string item;
+	double price;
+	string currency;  
+
+	// Read orders and add to the array
+	while (orderFile >> item >> price >> currency) {
+		bool found = false;
+
+		// Check if the item is already added
+		for (int i = 0; i < orderCount; i++) {
+			if (orders[i].name == item) {
+				orders[i].count++;
+				found = true;
+				break;
+			}
+		}
+
+		// Add new item if not found
+		if (!found) {
+			if (orderCount >= 100) {
+				cout << "Error: Maximum order limit reached (100).\n";
+				break;
+			}
+			orders[orderCount].name = item;
+			orders[orderCount].count = 1;
+			orderCount++;
+		}
+	}
+
+	orderFile.close();
+
+	if (orderCount == 0) {
+		cout << "No orders found.\n";
+		return;
+	}
+
+	// Sort the items alphabetically
+	sortOrders(orders, orderCount);
+
+	// Display the result
+	cout << "\n--- Sorted Orders ---\n";
+	for (int i = 0; i < orderCount; i++) {
+		cout << orders[i].name << " - " << orders[i].count << " orders\n";
+	}
+}
