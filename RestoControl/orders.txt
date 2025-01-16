@@ -2,3 +2,4 @@
 2 Pizza 12.5 lv.
 3 Soda 2.5 lv.
 4 Juice 1 lv.
+5 Juice 1 lv.

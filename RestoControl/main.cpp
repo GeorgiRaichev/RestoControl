@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <string>
 #include "menu.h"
 #include "inventory.h"
@@ -10,10 +11,49 @@ void showWaiterMenu();  // Waiter menu
 void showManagerMenu(); // Manager menu
 bool isManager = false; // Tracks if the user is a manager
 
-int main() {
-    string userType;
+void handleManagerChoice(int choice, bool& exitProgram) {
+    switch (choice) {
+    case 1: displayMenu(); break;
+    case 2: addOrder(); break;
+    case 3: cancelOrder(); break;
+    case 4: viewOrders(); break;
+    case 5: viewSortedOrders(); break;
+    case 6: checkInventory(); break;
+    case 7: issueProduct(); break;
+    case 8: addInventory(); break;
+    case 9: viewDailyRevenue(); break;
+    case 10: generateReport(); break;
+    case 11: viewTotalRevenueByDate(); break;
+    case 12: addItemToMenu(); break;
+    case 13: removeItemFromMenu(); break;
+    case 14:
+        cout << "Exiting system. Goodbye!\n";
+        exitProgram = true;
+        break;
+    default:
+        cout << "Invalid choice. Please try again.\n";
+    }
+}
 
-    // Select user type
+void handleWaiterChoice(int choice, bool& exitProgram) {
+    switch (choice) {
+    case 1: displayMenu(); break;
+    case 2: addOrder(); break;
+    case 3: cancelOrder(); break;
+    case 4: viewOrders(); break;
+    case 5: viewSortedOrders(); break;
+    case 6: viewDailyRevenue(); break;
+    case 7:
+        cout << "Exiting system. Goodbye!\n";
+        exitProgram = true;
+        break;
+    default:
+        cout << "Invalid choice. Please try again.\n";
+    }
+}
+
+void selectUserType() {
+    string userType;
     while (true) {
         cout << "Enter user type (waiter/manager): ";
         cin >> userType;
@@ -30,63 +70,18 @@ int main() {
             cout << "Invalid input. Please enter 'waiter' or 'manager'.\n";
         }
     }
+}
 
+int main() {
+    selectUserType();
     int choice;
     bool exitProgram = false;
 
-    // Main menu loop
     while (!exitProgram) {
-        if (isManager) {
-            showManagerMenu();
-        }
-        else {
-            showWaiterMenu();
-        }
-
+        isManager ? showManagerMenu() : showWaiterMenu();
         cin >> choice;
-
-        // Navigation and user selection
-        if (isManager) {
-            switch (choice) {
-            case 1: displayMenu(); break;
-            case 2: addOrder(); break;
-            case 3: cancelOrder(); break;
-            case 4: viewOrders(); break;
-            case 5: viewSortedOrders(); break;
-            case 6: checkInventory(); break;
-            case 7: issueProduct(); break;
-            case 8: addInventory(); break;
-            case 9: viewDailyRevenue(); break;
-            case 10: generateReport(); break;
-            case 11: viewTotalRevenueByDate(); break;
-            case 12: addItemToMenu(); break;
-            case 13: removeItemFromMenu(); break;
-            case 14:
-                cout << "Exiting system. Goodbye!\n";
-                exitProgram = true;
-                break;
-            default:
-                cout << "Invalid choice. Please try again.\n";
-            }
-        }
-        else {
-            switch (choice) {
-            case 1: displayMenu(); break;
-            case 2: addOrder(); break;
-            case 3: cancelOrder(); break;
-            case 4: viewOrders(); break;
-            case 5: viewSortedOrders(); break;
-            case 6: viewDailyRevenue(); break;
-            case 7:
-                cout << "Exiting system. Goodbye!\n";
-                exitProgram = true;
-                break;
-            default:
-                cout << "Invalid choice. Please try again.\n";
-            }
-        }
+        isManager ? handleManagerChoice(choice, exitProgram) : handleWaiterChoice(choice, exitProgram);
     }
-
     return 0;
 }
 
