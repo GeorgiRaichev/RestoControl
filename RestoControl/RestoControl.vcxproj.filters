@@ -44,5 +44,6 @@
     <Text Include="menu.txt" />
     <Text Include="orders.txt" />
     <Text Include="report.txt" />
+    <Text Include="recipes.txt" />
   </ItemGroup>
 </Project>

@@ -1,0 +1,5 @@
+Pizza 12.5
+Pasta 9.3
+Salad 6.2
+Soda 2.5
+Burger 10

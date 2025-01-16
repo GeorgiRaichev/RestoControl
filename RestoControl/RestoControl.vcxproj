@@ -141,6 +141,7 @@
     <Text Include="inventory.txt" />
     <Text Include="menu.txt" />
     <Text Include="orders.txt" />
+    <Text Include="recipes.txt" />
     <Text Include="report.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
