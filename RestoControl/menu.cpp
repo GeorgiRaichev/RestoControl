@@ -31,10 +31,11 @@ void displayMenu() {
 
 // Function to add a new item to the menu
 void addItemToMenu() {
-    ofstream menuFile("menu.txt", ios::app);  // Append to the end of the file
+    ofstream menuFile("menu.txt", ios::app);
+    ofstream recipesFile("recipes.txt", ios::app);
 
-    if (!menuFile) {
-        cout << "Error: Unable to open menu file.\n";
+    if (!menuFile || !recipesFile) {
+        cout << "Error: Unable to open menu or recipes file.\n";
         return;
     }
 
@@ -42,15 +43,51 @@ void addItemToMenu() {
     double itemPrice;
 
     cout << "Enter item name: ";
-    cin >> itemName;
-    cout << "Enter item price: ";
-    cin >> itemPrice;
+    cin >> ws;  // Remove leading whitespace
+    getline(cin, itemName);
 
-    // Write to the menu
+    cout << "Enter item price: ";
+    while (!(cin >> itemPrice)) {
+        cout << "Error: Invalid input. Please enter a valid price: ";
+        cin.clear();
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    }
+
+    // Save to menu.txt
     menuFile << itemName << " " << itemPrice << endl;
     cout << itemName << " added to the menu for " << itemPrice << " lv.\n";
 
     menuFile.close();
+
+    // Add recipe for the item
+    cout << "Now enter the ingredients for " << itemName << " (type 'done' when finished):\n";
+
+    string ingredient;
+    int quantity;
+    string recipeLine = itemName;
+
+    while (true) {
+        cout << "Enter ingredient name (or 'done' to finish): ";
+        cin >> ingredient;
+
+        if (ingredient == "done") {
+            break;
+        }
+
+        cout << "Enter quantity required: ";
+        while (!(cin >> quantity) || quantity <= 0) {
+            cout << "Error: Invalid quantity. Enter a positive number: ";
+            cin.clear();
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        }
+
+        recipeLine += " " + ingredient + " " + to_string(quantity);
+    }
+
+    recipesFile << recipeLine << endl;
+    cout << "Recipe for " << itemName << " added to recipes.\n";
+
+    recipesFile.close();
 }
 
 struct MenuItem {
@@ -60,73 +97,63 @@ struct MenuItem {
 // Function to remove an item from the menu
 void removeItemFromMenu() {
     ifstream menuFile("menu.txt");
-    ofstream tempFile("temp.txt");
+    ifstream recipesFile("recipes.txt");
+    ofstream tempMenuFile("temp_menu.txt");
+    ofstream tempRecipesFile("temp_recipes.txt");
 
-    if (!menuFile.is_open()) {
-        cout << "Error: Unable to open menu file.\n";
-        return;
-    }
-
-    if (!tempFile.is_open()) {
-        cout << "Error: Unable to create temporary file.\n";
-        menuFile.close();
+    if (!menuFile || !recipesFile || !tempMenuFile || !tempRecipesFile) {
+        cout << "Error: Unable to open necessary files.\n";
         return;
     }
 
     string itemName;
     cout << "Enter item name to remove: ";
-    cin >> ws; // To consume any leading whitespace
-    getline(cin, itemName); // To allow item names with spaces
+    cin >> ws;  // Remove leading whitespace
+    getline(cin, itemName);  // Allow multi-word item names
 
     string currentItem;
     double price;
     bool itemFound = false;
 
-    // Read each line from menu.txt
-    while (menuFile >> ws && getline(menuFile, currentItem, ' ')) {
-        // Read the price
-        if (!(menuFile >> price)) {
-            // If price is not read correctly, skip the rest of the line
-            string skipLine;
-            getline(menuFile, skipLine);
-            continue;
-        }
-
-        // Check if the current item matches the item to be removed
+    // Remove from menu.txt
+    while (menuFile >> currentItem >> price) {
         if (currentItem == itemName) {
             itemFound = true;
             cout << currentItem << " removed from the menu.\n";
-            // Skip writing this item to temp.txt
-            // break;
         }
         else {
-            // Write the item back to temp.txt
-            tempFile << currentItem << " " << price << endl;
+            tempMenuFile << currentItem << " " << price << endl;
         }
-
-        // Clear any remaining characters in the line
-        menuFile.ignore(numeric_limits<streamsize>::max(), '\n');
     }
 
     menuFile.close();
-    tempFile.close();
+    tempMenuFile.close();
 
-    if (itemFound) {
-        // Remove the original menu file
-        if (remove("menu.txt") != 0) {
-            cout << "Error: Failed to remove the original menu file.\n";
-            return;
+    // Remove from recipes.txt
+    string recipeLine;
+    while (getline(recipesFile, recipeLine)) {
+        size_t pos = recipeLine.find(' ');
+        if (pos != string::npos) {
+            string recipeProduct = recipeLine.substr(0, pos);
+            if (recipeProduct == itemName) {
+                cout << "Recipe for " << itemName << " removed from recipes.\n";
+                continue;  // Skip this line (do not write it to the new file)
+            }
         }
-
-        // Rename temp.txt to menu.txt
-        if (rename("temp.txt", "menu.txt") != 0) {
-            cout << "Error: Failed to rename temp.txt to menu.txt.\n";
-            return;
-        }
+        tempRecipesFile << recipeLine << endl;
     }
-    else {
-        // If the item was not found, delete the temp file
-        remove("temp.txt");
+
+    recipesFile.close();
+    tempRecipesFile.close();
+
+    // Replace old files with updated ones
+    remove("menu.txt");
+    rename("temp_menu.txt", "menu.txt");
+
+    remove("recipes.txt");
+    rename("temp_recipes.txt", "recipes.txt");
+
+    if (!itemFound) {
         cout << "Error: Item \"" << itemName << "\" not found in the menu.\n";
     }
 }

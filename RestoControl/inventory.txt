@@ -5,6 +5,7 @@ Lettuce 150
 Tomato 300
 Cucumber 200
 Dressing 150
-Water 500
-Syrup 500
+Water 900
+Syrup 450
 TomatoeSauce 0
+Oranges 47
