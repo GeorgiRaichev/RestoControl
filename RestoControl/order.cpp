@@ -463,7 +463,6 @@ void viewSortedOrders() {
 }
 // Function to view daily revenue
 void viewDailyRevenue() {
-	// Open the orders file for reading
 	ifstream orderFile("orders.txt");
 
 	if (!orderFile) {
@@ -471,27 +470,19 @@ void viewDailyRevenue() {
 		return;
 	}
 
+	int orderID;
 	string item;
 	double price;
 	string currency;
 	double totalRevenue = 0;
 
 	// Read orders and sum the prices
-	while (orderFile >> item >> price >> currency) {
-		// Validate that the currency is "lv."
+	while (orderFile >> orderID >> item >> price >> currency) {
 		if (currency != "lv.") {
-			cout << "Warning: Unexpected currency '" << currency << "' for item '" << item << "'. Skipping this entry.\n";
+			cout << "Warning: Unexpected currency '" << currency << "' for item '" << item << "'. Skipping entry.\n";
 			continue;
 		}
-
 		totalRevenue += price;
-	}
-
-	// Check for any read errors (optional)
-	if (orderFile.bad()) {
-		cout << "Error: An I/O error occurred while reading the orders file.\n";
-		orderFile.close();
-		return;
 	}
 
 	orderFile.close();
@@ -502,7 +493,6 @@ void viewDailyRevenue() {
 }
 // Function to generate a daily report
 void generateReport() {
-	
 	ifstream orderFile("orders.txt");
 
 	if (!orderFile) {
@@ -510,32 +500,23 @@ void generateReport() {
 		return;
 	}
 
-	double totalRevenue = 0;
+	int orderID;
 	string item;
 	double price;
-	string currency;  
+	string currency;
+	double totalRevenue = 0;
 
 	// Calculate total revenue
-	while (orderFile >> item >> price >> currency) {
-		// Validate that the currency is "lv."
+	while (orderFile >> orderID >> item >> price >> currency) {
 		if (currency != "lv.") {
-			cout << "Warning: Unexpected currency '" << currency << "' for item '" << item << "'. Skipping this entry.\n";
+			cout << "Warning: Unexpected currency '" << currency << "' for item '" << item << "'. Skipping entry.\n";
 			continue;
 		}
-
 		totalRevenue += price;
 	}
-
-	// Check for any read errors (optional)
-	if (orderFile.bad()) {
-		cout << "Error: An I/O error occurred while reading the orders file.\n";
-		orderFile.close();
-		return;
-	}
-
 	orderFile.close();
 
-	// Get current date using localtime_s
+	// Get current date
 	time_t now = time(0);
 	tm ltm;
 	localtime_s(&ltm, &now);
@@ -593,9 +574,11 @@ void viewTotalRevenueByDate() {
 		int reportDay, reportMonth, reportYear;
 		double revenue;
 
+		// Extract the date and revenue
 		sscanf_s(line.c_str(), "Date: %d/%d/%d - Total Revenue: %lf lv.",
 			&reportDay, &reportMonth, &reportYear, &revenue);
 
+		// Check if the report date is after or equal to the start date
 		if (reportYear > startYear ||
 			(reportYear == startYear && reportMonth > startMonth) ||
 			(reportYear == startYear && reportMonth == startMonth && reportDay >= startDay)) {
