@@ -1,6 +1,6 @@
-Dough 1100
-Cheese 1100
-TomatoSauce 750
+Dough 500
+Cheese 700
+TomatoSauce 550
 Lettuce 150
 Tomato 300
 Cucumber 200

@@ -182,7 +182,13 @@ void cancelOrder() {
 
 	int orderID;
 	cout << "Enter order ID to cancel: ";
-	cin >> orderID;
+
+	// Input validation loop to ensure an integer is entered
+	while (!(cin >> orderID)) {
+		cout << "Error: Invalid input. Please enter a numeric order ID: ";
+		cin.clear();  // Clear the error flag
+		cin.ignore(numeric_limits<streamsize>::max(), '\n');  // Ignore invalid input
+	}
 
 	string line;
 	bool orderFound = false;
