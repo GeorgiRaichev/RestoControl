@@ -18,7 +18,7 @@ void handleManagerChoice(int choice, bool& exitProgram) {
     case 3: cancelOrder(); break;
     case 4: viewOrders(); break;
     case 5: viewSortedOrders(); break;
-    case 6: checkInventory(); break;
+    case 6: checkInventory(); break; 
     case 7: issueProduct(); break;
     case 8: addInventory(); break;
     case 9: viewDailyRevenue(); break;
