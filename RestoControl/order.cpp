@@ -347,8 +347,13 @@ void cancelOrder() {
 
 	restoreInventory(recipeIngredients, recipeQuantities, recipeCount);
 
-	remove("orders.txt");
-	rename("temp_orders.txt", "orders.txt");
+	if (remove("orders.txt") != 0) {
+		cout << "Warning: Failed to remove orders.txt.\n";
+	}
+	if (rename("temp_orders.txt", "orders.txt") != 0) {
+		cout << "Error: Failed to rename temp_orders.txt to orders.txt.\n";
+	}
+
 }
 
 // ==============================

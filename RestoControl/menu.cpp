@@ -185,10 +185,20 @@ void removeItemFromMenuFiles(const string& itemName) {
     recipesFile.close();
     tempRecipesFile.close();
 
-    remove("menu.txt");
-    rename("temp_menu.txt", "menu.txt");
-    remove("recipes.txt");
-    rename("temp_recipes.txt", "recipes.txt");
+    if (remove("menu.txt") != 0) {
+        cout << "Warning: Failed to remove menu.txt.\n";
+    }
+    if (rename("temp_menu.txt", "menu.txt") != 0) {
+        cout << "Error: Failed to rename temp_menu.txt to menu.txt.\n";
+    }
+
+    if (remove("recipes.txt") != 0) {
+        cout << "Warning: Failed to remove recipes.txt.\n";
+    }
+    if (rename("temp_recipes.txt", "recipes.txt") != 0) {
+        cout << "Error: Failed to rename temp_recipes.txt to recipes.txt.\n";
+    }
+
 
     if (!itemFound) {
         cout << "Error: Item \"" << itemName << "\" not found in the menu.\n";
