@@ -1,292 +1,329 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <ctime> 
+#include <ctime>
 
 using namespace std;
+
+// ==============================
+// Constants
+// ==============================
+const int MAX_INGREDIENTS = 100;
+const int MAX_ORDERS = 100;
+
+// ==============================
+// Helper Function Declarations
+// ==============================
+
+// For addOrder function
+int determineNextOrderID();
+bool findMenuItem(ifstream& menuFile, const string& itemName, double& price);
+bool loadRecipe(const string& itemName, ifstream& recipesFile,
+	string recipeIngredients[], int recipeQuantities[], int& recipeCount);
+bool readInventory(string inventoryNames[], int inventoryValues[], int& inventoryCount);
+bool checkSufficientStock(const string recipeIngredients[], const int recipeQuantities[], int recipeCount,
+	const string inventoryNames[], const int inventoryValues[], int inventoryCount);
+void deductIngredients(const string recipeIngredients[], const int recipeQuantities[], int recipeCount,
+	int inventoryValues[], int inventoryCount, const string inventoryNames[]);
+void writeInventory(const string inventoryNames[], const int inventoryValues[], int inventoryCount);
+bool appendOrder(int orderID, const string& itemName, double price);
+
+// For cancelOrder function
+bool findAndRemoveOrder(int orderID, string& canceledItem, double& canceledPrice, string& currency);
+void restoreInventory(const string recipeIngredients[], const int recipeQuantities[], int recipeCount);
+
+// For viewSortedOrders function
+bool readAndAggregateOrders(const std::string& filename,
+	std::string orderNames[], int orderCounts[], int& orderCount);
+void sortOrders(std::string orderNames[], int orderCounts[], int orderCount);
+void displaySortedOrders(const std::string orderNames[], const int orderCounts[], int orderCount);
+
+// For report generation functions
+bool calculateTotalRevenue(const std::string& ordersFilename, double& totalRevenue);
+void getCurrentDate(int& day, int& month, int& year);
+bool appendReport(const std::string& reportFilename, int day, int month, int year, double totalRevenue);
+bool clearFile(const std::string& filename);
+
+// ==============================
+// Main Functions
+// ==============================
 
 // Function to add an order
 void addOrder() {
 	ifstream menuFile("menu.txt");
 	ifstream recipesFile("recipes.txt");
-	ifstream inventoryFile("inventory.txt");
-	ofstream tempInventory("temp_inventory.txt");
-	ifstream ordersFile("orders.txt");
-
-	if (!menuFile || !recipesFile || !inventoryFile || !tempInventory) {
+	if (!menuFile || !recipesFile) {
 		cout << "Error: Unable to open necessary files.\n";
 		return;
 	}
 
 	// Determine the next order ID
+	int orderID = determineNextOrderID();
+
+	string itemName;
+	cout << "Enter item name to order: ";
+	cin >> itemName;
+
+	double price = 0.0;
+	bool itemFound = findMenuItem(menuFile, itemName, price);
+	menuFile.close();
+
+	if (!itemFound) {
+		cout << "Error: " << itemName << " is not available in the menu. Order canceled.\n";
+		recipesFile.close();
+		return;
+	}
+
+	string recipeIngredients[MAX_INGREDIENTS];
+	int recipeQuantities[MAX_INGREDIENTS];
+	int recipeCount = 0;
+
+	// Load recipe for the item
+	bool recipeLoaded = loadRecipe(itemName, recipesFile, recipeIngredients, recipeQuantities, recipeCount);
+	recipesFile.close();
+
+	if (!recipeLoaded) {
+		cout << "Error: Recipe for " << itemName << " not found. Order canceled.\n";
+		return;
+	}
+
+	string inventoryNames[MAX_INGREDIENTS];
+	int inventoryValues[MAX_INGREDIENTS];
+	int inventoryCount = 0;
+
+	// Read current inventory
+	bool inventoryRead = readInventory(inventoryNames, inventoryValues, inventoryCount);
+	if (!inventoryRead) {
+		cout << "Error: Unable to read inventory.\n";
+		return;
+	}
+
+	// Check if inventory has sufficient stock for the recipe
+	bool sufficientStock = checkSufficientStock(recipeIngredients, recipeQuantities, recipeCount,
+		inventoryNames, inventoryValues, inventoryCount);
+	if (!sufficientStock) {
+		cout << "Order canceled due to insufficient inventory.\n";
+		return;
+	}
+
+	// Deduct used ingredients from inventory
+	deductIngredients(recipeIngredients, recipeQuantities, recipeCount,
+		inventoryValues, inventoryCount, inventoryNames);
+
+	// Write updated inventory to file
+	writeInventory(inventoryNames, inventoryValues, inventoryCount);
+
+	// Append new order to orders file
+	if (appendOrder(orderID, itemName, price)) {
+		cout << "Order ID " << orderID << " - " << itemName << " added to orders for " << price << " lv.\n";
+	}
+}
+
+// ==============================
+// Helper Function Definitions for addOrder
+// ==============================
+
+int determineNextOrderID() {
+	ifstream ordersFile("orders.txt");
 	int orderID = 1;
 	string line;
 	while (getline(ordersFile, line)) {
 		orderID++;
 	}
 	ordersFile.close();
+	return orderID;
+}
 
-	string itemName;
-	cout << "Enter item name to order: ";
-	cin >> itemName;
-
+bool findMenuItem(ifstream& menuFile, const string& itemName, double& price) {
 	string menuItem;
-	double price;
-	bool itemFound = false;
-
-	// Check if the item exists in the menu
 	while (menuFile >> menuItem >> price) {
 		if (menuItem == itemName) {
-			itemFound = true;
+			return true;
+		}
+	}
+	return false;
+}
 
-			const int MAX_INGREDIENTS = 20;
-			string recipeIngredients[MAX_INGREDIENTS];
-			int recipeQuantities[MAX_INGREDIENTS];
-			int recipeCount = 0;
+bool loadRecipe(const string& itemName, ifstream& recipesFile,
+	string recipeIngredients[], int recipeQuantities[], int& recipeCount) {
+	string recipeLine;
+	recipeCount = 0;
+	while (getline(recipesFile, recipeLine)) {
+		size_t pos = recipeLine.find(' ');
+		string recipeProduct = recipeLine.substr(0, pos);
+		if (recipeProduct == itemName) {
+			size_t start = pos + 1;
+			while (start < recipeLine.size()) {
+				pos = recipeLine.find(' ', start);
+				if (pos == string::npos) break;
 
-			string recipeLine;
-			bool sufficientStock = true;
+				string ingredient = recipeLine.substr(start, pos - start);
+				start = pos + 1;
 
-			// Find the recipe for the item
-			while (getline(recipesFile, recipeLine)) {
-				size_t pos = recipeLine.find(' ');
-				string recipeProduct = recipeLine.substr(0, pos);
-
-				if (recipeProduct == itemName) {
-					size_t start = pos + 1;
-					while (start < recipeLine.size()) {
-						pos = recipeLine.find(' ', start);
-						if (pos == string::npos) break;
-
-						string ingredient = recipeLine.substr(start, pos - start);
-						start = pos + 1;
-
-						pos = recipeLine.find(' ', start);
-						if (pos == string::npos) {
-							// Last ingredient in the line (fixing the issue)
-							string quantityStr = recipeLine.substr(start);
-							int quantity = stoi(quantityStr);
-
-							if (recipeCount < MAX_INGREDIENTS) {
-								recipeIngredients[recipeCount] = ingredient;
-								recipeQuantities[recipeCount] = quantity;
-								recipeCount++;
-							}
-							break;
-						}
-
-						string quantityStr = recipeLine.substr(start, pos - start);
-						int quantity = stoi(quantityStr);
-						start = pos + 1;
-
-						if (recipeCount < MAX_INGREDIENTS) {
-							recipeIngredients[recipeCount] = ingredient;
-							recipeQuantities[recipeCount] = quantity;
-							recipeCount++;
-						}
+				pos = recipeLine.find(' ', start);
+				if (pos == string::npos) {
+					string quantityStr = recipeLine.substr(start);
+					int quantity = stoi(quantityStr);
+					if (recipeCount < MAX_INGREDIENTS) {
+						recipeIngredients[recipeCount] = ingredient;
+						recipeQuantities[recipeCount] = quantity;
+						recipeCount++;
 					}
 					break;
 				}
-			}
 
-			inventoryFile.close();
-			inventoryFile.open("inventory.txt");
+				string quantityStr = recipeLine.substr(start, pos - start);
+				int quantity = stoi(quantityStr);
+				start = pos + 1;
 
-			string inventoryItem;
-			int inventoryQuantity;
-			string inventoryNames[MAX_INGREDIENTS];
-			int inventoryValues[MAX_INGREDIENTS];
-			int inventoryCount = 0;
-
-			// Read inventory and store all ingredients in memory
-			while (inventoryFile >> inventoryItem >> inventoryQuantity) {
-				inventoryNames[inventoryCount] = inventoryItem;
-				inventoryValues[inventoryCount] = inventoryQuantity;
-				inventoryCount++;
-			}
-			inventoryFile.close();
-
-			// Check if all ingredients are available
-			for (int i = 0; i < recipeCount; i++) {
-				bool found = false;
-				for (int j = 0; j < inventoryCount; j++) {
-					if (recipeIngredients[i] == inventoryNames[j]) {
-						found = true;
-						if (inventoryValues[j] < recipeQuantities[i]) {
-							cout << "Error: Not enough " << recipeIngredients[i] << " in stock for " << itemName << ".\n";
-							sufficientStock = false;
-						}
-					}
+				if (recipeCount < MAX_INGREDIENTS) {
+					recipeIngredients[recipeCount] = ingredient;
+					recipeQuantities[recipeCount] = quantity;
+					recipeCount++;
 				}
-				if (!found) {
-					cout << "Error: Ingredient " << recipeIngredients[i] << " not found in inventory. Order canceled.\n";
+			}
+			return true;
+		}
+	}
+	return false;
+}
+
+bool readInventory(string inventoryNames[], int inventoryValues[], int& inventoryCount) {
+	ifstream inventoryFile("inventory.txt");
+	if (!inventoryFile) return false;
+	inventoryCount = 0;
+	while (inventoryFile >> inventoryNames[inventoryCount] >> inventoryValues[inventoryCount]) {
+		inventoryCount++;
+	}
+	inventoryFile.close();
+	return true;
+}
+
+bool checkSufficientStock(const string recipeIngredients[], const int recipeQuantities[], int recipeCount,
+	const string inventoryNames[], const int inventoryValues[], int inventoryCount) {
+	bool sufficientStock = true;
+	for (int i = 0; i < recipeCount; i++) {
+		bool found = false;
+		for (int j = 0; j < inventoryCount; j++) {
+			if (recipeIngredients[i] == inventoryNames[j]) {
+				found = true;
+				if (inventoryValues[j] < recipeQuantities[i]) {
+					cout << "Error: Not enough " << recipeIngredients[i]
+						<< " in stock for " << recipeIngredients[i] << ".\n";
 					sufficientStock = false;
 				}
 			}
-
-			if (!sufficientStock) {
-				cout << "Order canceled due to insufficient inventory.\n";
-				menuFile.close();
-				recipesFile.close();
-				tempInventory.close();
-				remove("temp_inventory.txt");
-				return;
-			}
-
-			// Deduct ingredients from inventory
-			for (int i = 0; i < recipeCount; i++) {
-				for (int j = 0; j < inventoryCount; j++) {
-					if (recipeIngredients[i] == inventoryNames[j]) {
-						inventoryValues[j] -= recipeQuantities[i]; // Deduct all ingredients
-					}
-				}
-			}
-
-			// Save updated inventory back to file
-			ofstream updatedInventory("inventory.txt");
-			for (int i = 0; i < inventoryCount; i++) {
-				updatedInventory << inventoryNames[i] << " " << inventoryValues[i] << endl;
-			}
-			updatedInventory.close();
-
-			ofstream orderFile("orders.txt", ios::app);
-			if (!orderFile) {
-				cout << "Error: Unable to open orders file for writing.\n";
-				return;
-			}
-
-			orderFile << orderID << " " << itemName << " " << price << " lv." << endl;
-			orderFile.close();
-
-			cout << "Order ID " << orderID << " - " << itemName << " added to orders for " << price << " lv.\n";
-			break;
+		}
+		if (!found) {
+			cout << "Error: Ingredient " << recipeIngredients[i]
+				<< " not found in inventory. Order canceled.\n";
+			sufficientStock = false;
 		}
 	}
-
-	if (!itemFound) {
-		cout << "Error: " << itemName << " is not available in the menu. Order canceled.\n";
-	}
-
-	menuFile.close();
-	recipesFile.close();
+	return sufficientStock;
 }
 
+void deductIngredients(const string recipeIngredients[], const int recipeQuantities[], int recipeCount,
+	int inventoryValues[], int inventoryCount, const string inventoryNames[]) {
+	for (int i = 0; i < recipeCount; i++) {
+		for (int j = 0; j < inventoryCount; j++) {
+			if (recipeIngredients[i] == inventoryNames[j]) {
+				inventoryValues[j] -= recipeQuantities[i];
+			}
+		}
+	}
+}
 
-// Function to cancel an order
-void cancelOrder() {
-	ifstream orderFile("orders.txt");
+void writeInventory(const string inventoryNames[], const int inventoryValues[], int inventoryCount) {
+	ofstream updatedInventory("inventory.txt");
+	for (int i = 0; i < inventoryCount; i++) {
+		updatedInventory << inventoryNames[i] << " " << inventoryValues[i] << endl;
+	}
+	updatedInventory.close();
+}
+
+bool appendOrder(int orderID, const string& itemName, double price) {
+	ofstream orderFile("orders.txt", ios::app);
 	if (!orderFile) {
-		cout << "Error: Orders file not found.\n";
-		return;
+		cout << "Error: Unable to open orders file for writing.\n";
+		return false;
 	}
+	orderFile << orderID << " " << itemName << " " << price << " lv." << endl;
+	orderFile.close();
+	return true;
+}
 
-	int orderID;
-	cout << "Enter order ID to cancel: ";
+// ==============================
+// Helper Function Definitions for cancelOrder
+// ==============================
 
-	// Input validation loop to ensure an integer is entered
-	while (!(cin >> orderID)) {
-		cout << "Error: Invalid input. Please enter a numeric order ID: ";
-		cin.clear();  // Clear the error flag
-		cin.ignore(numeric_limits<streamsize>::max(), '\n');  // Ignore invalid input
-	}
-
-	string line;
-	bool orderFound = false;
-
-	ifstream recipesFile("recipes.txt");
-	if (!recipesFile) {
-		cout << "Error: Recipes file not found.\n";
-		return;
-	}
-
+bool findAndRemoveOrder(int orderID, string& canceledItem, double& canceledPrice, string& currency) {
+	ifstream orderFile("orders.txt");
 	ofstream tempOrderFile("temp_orders.txt");
-	ofstream tempInventoryFile("temp_inventory.txt");
-	if (!tempOrderFile || !tempInventoryFile) {
-		cout << "Error: Unable to create temporary files.\n";
-		return;
+	if (!orderFile || !tempOrderFile) {
+		cout << "Error: Unable to open orders files.\n";
+		return false;
 	}
 
-	string canceledItem;
-	double canceledPrice;
-	string currency;
+	bool orderFound = false;
 	int currentID;
-
-	const int MAX_INGREDIENTS = 20;
-	string recipeIngredients[MAX_INGREDIENTS];
-	int recipeQuantities[MAX_INGREDIENTS];
-	int recipeCount = 0;
-
-	// Read orders and find the one to cancel
 	while (orderFile >> currentID >> canceledItem >> canceledPrice >> currency) {
 		if (currentID == orderID && !orderFound) {
 			orderFound = true;
-			cout << "Order ID " << orderID << " (" << canceledItem << ") canceled successfully.\n";
-
-			// Find the recipe for the canceled item
-			string recipeLine;
-			while (getline(recipesFile, recipeLine)) {
-				size_t pos = recipeLine.find(' ');
-				string recipeProduct = recipeLine.substr(0, pos);
-
-				if (recipeProduct == canceledItem) {
-					size_t start = pos + 1;
-					while (start < recipeLine.size()) {
-						pos = recipeLine.find(' ', start);
-						if (pos == string::npos) {
-							// Fix for last ingredient in recipe
-							string ingredient = recipeLine.substr(start);
-							size_t lastSpace = ingredient.rfind(' ');
-							string quantityStr = ingredient.substr(lastSpace + 1);
-							ingredient = ingredient.substr(0, lastSpace);
-							int quantity = stoi(quantityStr);
-
-							if (recipeCount < MAX_INGREDIENTS) {
-								recipeIngredients[recipeCount] = ingredient;
-								recipeQuantities[recipeCount] = quantity;
-								recipeCount++;
-							}
-							break;
-						}
-
-						string ingredient = recipeLine.substr(start, pos - start);
-						start = pos + 1;
-
-						pos = recipeLine.find(' ', start);
-						if (pos == string::npos) {
-							// Handle last ingredient separately
-							string quantityStr = recipeLine.substr(start);
-							int quantity = stoi(quantityStr);
-
-							if (recipeCount < MAX_INGREDIENTS) {
-								recipeIngredients[recipeCount] = ingredient;
-								recipeQuantities[recipeCount] = quantity;
-								recipeCount++;
-							}
-							break;
-						}
-
-						string quantityStr = recipeLine.substr(start, pos - start);
-						int quantity = stoi(quantityStr);
-						start = pos + 1;
-
-						if (recipeCount < MAX_INGREDIENTS) {
-							recipeIngredients[recipeCount] = ingredient;
-							recipeQuantities[recipeCount] = quantity;
-							recipeCount++;
-						}
-					}
-					break;
-				}
-			}
 		}
 		else {
-			tempOrderFile << currentID << " " << canceledItem << " " << canceledPrice << " " << currency << endl;
+			tempOrderFile << currentID << " " << canceledItem << " "
+				<< canceledPrice << " " << currency << endl;
 		}
 	}
 
 	orderFile.close();
-	recipesFile.close();
 	tempOrderFile.close();
+	return orderFound;
+}
+
+void restoreInventory(const string recipeIngredients[], const int recipeQuantities[], int recipeCount) {
+	const int MAX_ITEMS = 50;
+	string inventoryItems[MAX_ITEMS];
+	int inventoryQuantities[MAX_ITEMS];
+	int inventoryCount = 0;
+
+	if (!readInventory(inventoryItems, inventoryQuantities, inventoryCount)) {
+		cout << "Error: Inventory file not found.\n";
+		return;
+	}
+
+	for (int i = 0; i < recipeCount; i++) {
+		bool found = false;
+		for (int j = 0; j < inventoryCount; j++) {
+			if (recipeIngredients[i] == inventoryItems[j]) {
+				inventoryQuantities[j] += recipeQuantities[i];
+				found = true;
+				break;
+			}
+		}
+		if (!found) {
+			cout << "Warning: Ingredient " << recipeIngredients[i]
+				<< " not found in inventory. It will not be restored.\n";
+		}
+	}
+
+	writeInventory(inventoryItems, inventoryQuantities, inventoryCount);
+}
+
+void cancelOrder() {
+	int orderID;
+	cout << "Enter order ID to cancel: ";
+
+	while (!(cin >> orderID)) {
+		cout << "Error: Invalid input. Please enter a numeric order ID: ";
+		cin.clear();
+		cin.ignore(numeric_limits<streamsize>::max(), '\n');
+	}
+
+	string canceledItem, currency;
+	double canceledPrice;
+	bool orderFound = findAndRemoveOrder(orderID, canceledItem, canceledPrice, currency);
 
 	if (!orderFound) {
 		cout << "Error: Order ID " << orderID << " not found.\n";
@@ -294,56 +331,30 @@ void cancelOrder() {
 		return;
 	}
 
-	ifstream inventoryFile("inventory.txt");
-	if (!inventoryFile) {
-		cout << "Error: Inventory file not found.\n";
+	cout << "Order ID " << orderID << " (" << canceledItem << ") canceled successfully.\n";
+
+	string recipeIngredients[MAX_INGREDIENTS];
+	int recipeQuantities[MAX_INGREDIENTS];
+	int recipeCount = 0;
+
+	ifstream recipesFile("recipes.txt");
+	if (!recipesFile) {
+		cout << "Error: Recipes file not found.\n";
 		return;
 	}
+	loadRecipe(canceledItem, recipesFile, recipeIngredients, recipeQuantities, recipeCount);
+	recipesFile.close();
 
-	string inventoryItem;
-	int inventoryQuantity;
-	const int MAX_ITEMS = 50;
-	string inventoryItems[MAX_ITEMS];
-	int inventoryQuantities[MAX_ITEMS];
-	int inventoryCount = 0;
+	restoreInventory(recipeIngredients, recipeQuantities, recipeCount);
 
-	// Read inventory into arrays
-	while (inventoryFile >> inventoryItem >> inventoryQuantity) {
-		inventoryItems[inventoryCount] = inventoryItem;
-		inventoryQuantities[inventoryCount] = inventoryQuantity;
-		inventoryCount++;
-	}
-	inventoryFile.close();
-
-	// Restore ingredients to inventory (Loop through all)
-	for (int i = 0; i < recipeCount; i++) {
-		bool found = false;
-		for (int j = 0; j < inventoryCount; j++) {
-			if (recipeIngredients[i] == inventoryItems[j]) {
-				inventoryQuantities[j] += recipeQuantities[i]; // Restore quantity
-				found = true;
-				break;
-			}
-		}
-		if (!found) {
-			cout << "Warning: Ingredient " << recipeIngredients[i] << " not found in inventory. It will not be restored.\n";
-		}
-	}
-
-	// Write updated inventory back to file
-	for (int i = 0; i < inventoryCount; i++) {
-		tempInventoryFile << inventoryItems[i] << " " << inventoryQuantities[i] << endl;
-	}
-
-	tempInventoryFile.close();
-
-	// Replace original files
 	remove("orders.txt");
 	rename("temp_orders.txt", "orders.txt");
-	remove("inventory.txt");
-	rename("temp_inventory.txt", "inventory.txt");
 }
-// Function to view all past orders
+
+// ==============================
+// Functions for Viewing Orders and Revenue
+// ==============================
+
 void viewOrders() {
 	ifstream orderFile("orders.txt");
 
@@ -368,57 +379,46 @@ void viewOrders() {
 	orderFile.close();
 }
 
-struct OrderItem {
-	string name;
-	int count = 0;
-};
-
-// Function to sort orders alphabetically (Selection Sort)
-void sortOrders(OrderItem orders[], int orderCount) {
-	for (int i = 0; i < orderCount - 1; i++) {
-		int minIndex = i;
-		for (int j = i + 1; j < orderCount; j++) {
-			if (orders[j].name < orders[minIndex].name) {
-				minIndex = j;
-			}
-		}
-		// Swap if a smaller element is found
-		if (minIndex != i) {
-			OrderItem temp = orders[i];
-			orders[i] = orders[minIndex];
-			orders[minIndex] = temp;
-		}
-	}
-}
-
 void viewSortedOrders() {
-	ifstream orderFile("orders.txt");
+	std::string orderNames[MAX_ORDERS];
+	int orderCounts[MAX_ORDERS] = { 0 };
+	int orderCount = 0;
 
-	if (!orderFile) {
-		cout << "Error: Orders file not found.\n";
+	if (!readAndAggregateOrders("orders.txt", orderNames, orderCounts, orderCount)) {
 		return;
 	}
 
-	const int MAX_ORDERS = 100;
-	string orderNames[MAX_ORDERS];
-	int orderCounts[MAX_ORDERS];
-	int orderCount = 0;
+	if (orderCount == 0) {
+		cout << "No orders found.\n";
+		return;
+	}
 
+	sortOrders(orderNames, orderCounts, orderCount);
+	displaySortedOrders(orderNames, orderCounts, orderCount);
+}
+
+bool readAndAggregateOrders(const std::string& filename,
+	std::string orderNames[], int orderCounts[], int& orderCount) {
+	ifstream orderFile(filename);
+	if (!orderFile) {
+		cout << "Error: Orders file not found.\n";
+		return false;
+	}
+
+	orderCount = 0;
 	int orderID;
-	string item;
+	std::string item;
 	double price;
-	string currency;
+	std::string currency;
 
-	// Read orders and extract item names correctly
 	while (orderFile >> orderID >> item >> price >> currency) {
 		if (currency != "lv.") {
-			cout << "Warning: Incorrect format in orders file. Skipping entry: " << item << " " << price << " " << currency << endl;
-			continue;  // Skip incorrectly formatted lines
+			cout << "Warning: Incorrect format in orders file. Skipping entry: "
+				<< item << " " << price << " " << currency << endl;
+			continue;
 		}
 
 		bool found = false;
-
-		// Check if the item is already added
 		for (int i = 0; i < orderCount; i++) {
 			if (orderNames[i] == item) {
 				orderCounts[i]++;
@@ -427,7 +427,6 @@ void viewSortedOrders() {
 			}
 		}
 
-		// Add new item if not found
 		if (!found) {
 			if (orderCount >= MAX_ORDERS) {
 				cout << "Error: Maximum order limit reached (" << MAX_ORDERS << ").\n";
@@ -440,13 +439,10 @@ void viewSortedOrders() {
 	}
 
 	orderFile.close();
+	return true;
+}
 
-	if (orderCount == 0) {
-		cout << "No orders found.\n";
-		return;
-	}
-
-	// Sort orders alphabetically (Selection Sort)
+void sortOrders(std::string orderNames[], int orderCounts[], int orderCount) {
 	for (int i = 0; i < orderCount - 1; i++) {
 		int minIndex = i;
 		for (int j = i + 1; j < orderCount; j++) {
@@ -454,20 +450,25 @@ void viewSortedOrders() {
 				minIndex = j;
 			}
 		}
-		// Swap items
 		if (minIndex != i) {
-			swap(orderNames[i], orderNames[minIndex]);
-			swap(orderCounts[i], orderCounts[minIndex]);
+			std::string tempName = orderNames[i];
+			orderNames[i] = orderNames[minIndex];
+			orderNames[minIndex] = tempName;
+
+			int tempCount = orderCounts[i];
+			orderCounts[i] = orderCounts[minIndex];
+			orderCounts[minIndex] = tempCount;
 		}
 	}
+}
 
-	// Display sorted orders
+void displaySortedOrders(const std::string orderNames[], const int orderCounts[], int orderCount) {
 	cout << "\n--- Sorted Orders ---\n";
 	for (int i = 0; i < orderCount; i++) {
 		cout << orderNames[i] << " - " << orderCounts[i] << " orders\n";
 	}
 }
-// Function to view daily revenue
+
 void viewDailyRevenue() {
 	ifstream orderFile("orders.txt");
 
@@ -482,7 +483,6 @@ void viewDailyRevenue() {
 	string currency;
 	double totalRevenue = 0;
 
-	// Read orders and sum the prices
 	while (orderFile >> orderID >> item >> price >> currency) {
 		if (currency != "lv.") {
 			cout << "Warning: Unexpected currency '" << currency << "' for item '" << item << "'. Skipping entry.\n";
@@ -493,68 +493,89 @@ void viewDailyRevenue() {
 
 	orderFile.close();
 
-	// Display the result
 	cout << "\n--- Daily Revenue ---\n";
 	cout << "Total Revenue: " << totalRevenue << " lv.\n";
 }
-// Function to generate a daily report
-void generateReport() {
-	ifstream orderFile("orders.txt");
 
-	if (!orderFile) {
-		cout << "Error: Orders file not found.\n";
+void generateReport() {
+	double totalRevenue = 0.0;
+
+	if (!calculateTotalRevenue("orders.txt", totalRevenue)) {
 		return;
 	}
 
-	int orderID;
-	string item;
-	double price;
-	string currency;
-	double totalRevenue = 0;
+	int day, month, year;
+	getCurrentDate(day, month, year);
 
-	// Calculate total revenue
+	if (!appendReport("report.txt", day, month, year, totalRevenue)) {
+		return;
+	}
+
+	if (!clearFile("orders.txt")) {
+		return;
+	}
+
+	cout << "\n--- Report Generated ---\n";
+	cout << "Total Revenue for " << day << "/" << month << "/" << year
+		<< ": " << totalRevenue << " lv.\n";
+	cout << "Orders have been cleared.\n";
+}
+
+bool calculateTotalRevenue(const std::string& ordersFilename, double& totalRevenue) {
+	ifstream orderFile(ordersFilename);
+	if (!orderFile) {
+		cout << "Error: Orders file not found.\n";
+		return false;
+	}
+
+	int orderID;
+	std::string item;
+	double price;
+	std::string currency;
+	totalRevenue = 0.0;
+
 	while (orderFile >> orderID >> item >> price >> currency) {
 		if (currency != "lv.") {
-			cout << "Warning: Unexpected currency '" << currency << "' for item '" << item << "'. Skipping entry.\n";
+			cout << "Warning: Unexpected currency '" << currency
+				<< "' for item '" << item << "'. Skipping entry.\n";
 			continue;
 		}
 		totalRevenue += price;
 	}
 	orderFile.close();
+	return true;
+}
 
-	// Get current date
+void getCurrentDate(int& day, int& month, int& year) {
 	time_t now = time(0);
 	tm ltm;
 	localtime_s(&ltm, &now);
+	day = ltm.tm_mday;
+	month = 1 + ltm.tm_mon;
+	year = 1900 + ltm.tm_year;
+}
 
-	int day = ltm.tm_mday;
-	int month = 1 + ltm.tm_mon;
-	int year = 1900 + ltm.tm_year;
-
-	// Write the report to file
-	ofstream reportFile("report.txt", ios::app);
+bool appendReport(const std::string& reportFilename, int day, int month, int year, double totalRevenue) {
+	ofstream reportFile(reportFilename, ios::app);
 	if (!reportFile) {
 		cout << "Error: Unable to create or open report file.\n";
-		return;
+		return false;
 	}
 
 	reportFile << "Date: " << day << "/" << month << "/" << year
 		<< " - Total Revenue: " << totalRevenue << " lv.\n";
 	reportFile.close();
+	return true;
+}
 
-	// Clear orders.txt (reset daily revenue)
-	ofstream clearOrders("orders.txt", ofstream::trunc);
-	if (!clearOrders) {
-		cout << "Error: Unable to clear orders file.\n";
-		return;
+bool clearFile(const std::string& filename) {
+	ofstream file(filename, ofstream::trunc);
+	if (!file) {
+		cout << "Error: Unable to clear file " << filename << ".\n";
+		return false;
 	}
-	clearOrders.close();
-
-	// Display the result
-	cout << "\n--- Report Generated ---\n";
-	cout << "Total Revenue for " << day << "/" << month << "/" << year
-		<< ": " << totalRevenue << " lv.\n";
-	cout << "Orders have been cleared.\n";
+	file.close();
+	return true;
 }
 
 void viewTotalRevenueByDate() {
@@ -580,11 +601,9 @@ void viewTotalRevenueByDate() {
 		int reportDay, reportMonth, reportYear;
 		double revenue;
 
-		// Extract the date and revenue
 		sscanf_s(line.c_str(), "Date: %d/%d/%d - Total Revenue: %lf lv.",
 			&reportDay, &reportMonth, &reportYear, &revenue);
 
-		// Check if the report date is after or equal to the start date
 		if (reportYear > startYear ||
 			(reportYear == startYear && reportMonth > startMonth) ||
 			(reportYear == startYear && reportMonth == startMonth && reportDay >= startDay)) {
