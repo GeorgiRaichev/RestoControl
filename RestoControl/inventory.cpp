@@ -4,7 +4,10 @@
 
 using namespace std;
 
-// Function to check inventory availability
+// ==============================
+// Function: checkInventory
+// ==============================
+// Reads and displays the current inventory.
 void checkInventory() {
     ifstream inventoryFile("inventory.txt");
 
@@ -24,24 +27,15 @@ void checkInventory() {
     inventoryFile.close();
 }
 
-// Function to issue a product from inventory
-void issueProduct() {
-    ifstream inventoryFile("inventory.txt");
-    ofstream tempFile("temp.txt");
+// ==============================
+// Helper Functions for issueProduct
+// ==============================
 
-    if (!inventoryFile || !tempFile) {
-        cout << "Error: Unable to open inventory file.\n";
-        return;
-    }
-
-    string itemName, currentItem;
-    int quantity, amountToIssue;
+// Processes the issuance of a specified quantity for a given item.
+void processIssueProduct(ifstream& inventoryFile, ofstream& tempFile, const string& itemName, int amountToIssue) {
+    string currentItem;
+    int quantity;
     bool itemFound = false;
-
-    cout << "Enter item name to issue: ";
-    cin >> itemName;
-    cout << "Enter quantity to issue: ";
-    cin >> amountToIssue;
 
     while (inventoryFile >> currentItem >> quantity) {
         if (currentItem == itemName) {
@@ -60,19 +54,13 @@ void issueProduct() {
     if (!itemFound) {
         cout << "Error: Item " << itemName << " not found in inventory.\n";
     }
-
-    inventoryFile.close();
-    tempFile.close();
-
-    // Replace the old file with the new one
-    remove("inventory.txt");
-    if (rename("temp.txt", "inventory.txt") != 0) {
-        cout << "Error: Failed to rename temp file to inventory.txt.\n";
-    }
 }
 
-// Function to add a product to the inventory
-void addInventory() {
+// ==============================
+// Function: issueProduct
+// ==============================
+// Issues a specified quantity of a product from the inventory.
+void issueProduct() {
     ifstream inventoryFile("inventory.txt");
     ofstream tempFile("temp.txt");
 
@@ -81,14 +69,35 @@ void addInventory() {
         return;
     }
 
-    string itemName, currentItem;
-    int quantity, existingQuantity;
-    bool itemFound = false;
+    string itemName;
+    int amountToIssue;
 
-    cout << "Enter item name to add: ";
+    cout << "Enter item name to issue: ";
     cin >> itemName;
-    cout << "Enter quantity to add: ";
-    cin >> quantity;
+    cout << "Enter quantity to issue: ";
+    cin >> amountToIssue;
+
+    processIssueProduct(inventoryFile, tempFile, itemName, amountToIssue);
+
+    inventoryFile.close();
+    tempFile.close();
+
+    // Replace the old inventory file with the updated temporary file
+    remove("inventory.txt");
+    if (rename("temp.txt", "inventory.txt") != 0) {
+        cout << "Error: Failed to rename temp file to inventory.txt.\n";
+    }
+}
+
+// ==============================
+// Helper Functions for addInventory
+// ==============================
+
+// Processes adding a specified quantity to an item in the inventory.
+void processAddInventory(ifstream& inventoryFile, ofstream& tempFile, const string& itemName, int quantity) {
+    string currentItem;
+    int existingQuantity;
+    bool itemFound = false;
 
     while (inventoryFile >> currentItem >> existingQuantity) {
         if (currentItem == itemName) {
@@ -98,7 +107,7 @@ void addInventory() {
         tempFile << currentItem << " " << existingQuantity << endl;
     }
 
-    // If the product is not found, add a new line
+    // If the product was not found, add it to the end
     if (!itemFound) {
         tempFile << itemName << " " << quantity << endl;
         cout << itemName << " added to inventory with quantity " << quantity << endl;
@@ -106,11 +115,35 @@ void addInventory() {
     else {
         cout << quantity << " units of " << itemName << " added to existing stock.\n";
     }
+}
+
+// ==============================
+// Function: addInventory
+// ==============================
+// Adds a specified quantity of a product to the inventory.
+void addInventory() {
+    ifstream inventoryFile("inventory.txt");
+    ofstream tempFile("temp.txt");
+
+    if (!inventoryFile || !tempFile) {
+        cout << "Error: Unable to open inventory file.\n";
+        return;
+    }
+
+    string itemName;
+    int quantity;
+
+    cout << "Enter item name to add: ";
+    cin >> itemName;
+    cout << "Enter quantity to add: ";
+    cin >> quantity;
+
+    processAddInventory(inventoryFile, tempFile, itemName, quantity);
 
     inventoryFile.close();
     tempFile.close();
 
-    // Replace the old file with the new one
+    // Replace the old inventory file with the updated temporary file
     remove("inventory.txt");
     if (rename("temp.txt", "inventory.txt") != 0) {
         cout << "Error: Failed to rename temp file to inventory.txt.\n";

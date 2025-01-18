@@ -9,5 +9,5 @@ Water 900
 Syrup 250
 Oranges 47
 Pasta 255
-Cream 1800
-Biscuits 1500
+Cream 1600
+Biscuits 2400

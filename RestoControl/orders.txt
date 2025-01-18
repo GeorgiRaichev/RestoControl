@@ -1,4 +1,0 @@
-1 Pizza 12.5 lv.
-2 Soda 2.5 lv.
-3 Pizza 12.5 lv.
-4 Cake 12 lv.
