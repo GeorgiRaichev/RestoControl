@@ -18,7 +18,7 @@ void handleManagerChoice(int choice, bool& exitProgram) {
     case 3: cancelOrder(); break;
     case 4: viewOrders(); break;
     case 5: viewSortedOrders(); break;
-    case 6: checkInventory(); break; 
+    case 6: checkInventory(); break;
     case 7: issueProduct(); break;
     case 8: addInventory(); break;
     case 9: viewDailyRevenue(); break;
@@ -78,9 +78,24 @@ int main() {
     bool exitProgram = false;
 
     while (!exitProgram) {
+        // Display appropriate menu based on user type
         isManager ? showManagerMenu() : showWaiterMenu();
-        cin >> choice;
-        isManager ? handleManagerChoice(choice, exitProgram) : handleWaiterChoice(choice, exitProgram);
+
+        // Validate user input for numeric choice
+        if (!(cin >> choice)) {
+            cout << "Invalid input. Please enter a numeric option.\n";
+            cin.clear();                // Clear the error state
+            cin.ignore(10000, '\n');    // Discard invalid input up to newline
+            continue;                   // Restart loop to prompt again
+        }
+
+        // Handle the user's choice based on role
+        if (isManager) {
+            handleManagerChoice(choice, exitProgram);
+        }
+        else {
+            handleWaiterChoice(choice, exitProgram);
+        }
     }
     return 0;
 }
