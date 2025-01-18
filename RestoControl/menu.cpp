@@ -1,7 +1,6 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <iomanip>  // For output formatting
 
 using namespace std;
 
@@ -17,13 +16,41 @@ void displayMenu() {
     string item;
     double price;
 
-    cout << "\n--- Current Menu ---\n";
-    cout << left << setw(20) << "Item" << right << setw(10) << "Price (lv.)" << endl;
+    // Define total width for centering the header
+    int totalWidth = 30;
+    string header = "--- Current Menu ---";
+    int pad = (totalWidth - static_cast<int>(header.length())) / 2;
+
+    // Print padding spaces for centering and then the header
+    cout << "\n";
+    for (int i = 0; i < pad; ++i) {
+        cout << " ";
+    }
+    cout << header << "\n";
+
+    // Header row with left and right alignment, and specified width
+    cout.setf(ios::left, ios::adjustfield);
+    cout.width(20);
+    cout << "Item";
+    cout.setf(ios::right, ios::adjustfield);
+    cout.width(10);
+    cout << "Price (lv.)" << endl;
     cout << "-------------------------------\n";
 
+    // Set fixed format and precision for floating-point values
+    cout.setf(ios::fixed, ios::floatfield);
+    cout.precision(2);
+
     while (file >> item >> price) {
-        cout << left << setw(20) << item
-            << right << setw(8) << fixed << setprecision(2) << price << " lv." << endl;
+        // Output the item name – left-aligned, width of 20 characters
+        cout.setf(ios::left, ios::adjustfield);
+        cout.width(20);
+        cout << item;
+
+        // Output the price – right-aligned, width of 8 characters
+        cout.setf(ios::right, ios::adjustfield);
+        cout.width(8);
+        cout << price << " lv." << endl;
     }
 
     file.close();
