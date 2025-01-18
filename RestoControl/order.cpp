@@ -1,3 +1,19 @@
+/**
+*
+* Solution to course project # 4
+* Introduction to programming course
+* Faculty of Mathematics and Informatics of Sofia University
+* Winter semester 2024/2025
+*
+* @author Georgi Raychev
+* @idnumber 0MI0600451
+* @compiler Visual Studio
+*
+* This file contains helper functions for solving variant 4 of the course project.
+*
+*/
+
+
 #include <iostream>
 #include <fstream>
 #include <string>
