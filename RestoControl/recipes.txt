@@ -4,3 +4,4 @@ Salad Lettuce 150 Tomato 100 Cucumber 100 Dressing 50
 Burger Bread 150 Meat 200 Cheese 50
 Soda Water 500 Syrup 50
 Juice Oranges 3 Water 100
+Cake Cream 200 Biscuits 500

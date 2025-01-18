@@ -4,3 +4,4 @@ Salad 6.2
 Burger 10
 Soda 2.5
 Juice 1
+Cake 12
