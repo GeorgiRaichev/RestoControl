@@ -27,9 +27,9 @@ void initializeFiles() {
 	ofstream ofs1("report.txt", ios::trunc);
 }
 
-void showWaiterMenu();  // Waiter menu
-void showManagerMenu(); // Manager menu
-bool isManager = false; // Tracks if the user is a manager
+void showWaiterMenu();  
+void showManagerMenu(); 
+bool isManager = false; 
 
 void handleManagerChoice(int choice, bool& exitProgram) {
 	switch (choice) {
@@ -99,18 +99,15 @@ int main() {
 	bool exitProgram = false;
 
 	while (!exitProgram) {
-		// Display appropriate menu based on user type
+		
 		isManager ? showManagerMenu() : showWaiterMenu();
-
-		// Validate user input for numeric choice
 		if (!(cin >> choice)) {
 			cout << "Invalid input. Please enter a numeric option.\n";
-			cin.clear();                // Clear the error state
-			cin.ignore(10000, '\n');    // Discard invalid input up to newline
-			continue;                   // Restart loop to prompt again
+			cin.clear();                
+			cin.ignore(10000, '\n');    
+			continue;                  
 		}
 
-		// Handle the user's choice based on role
 		if (isManager) {
 			handleManagerChoice(choice, exitProgram);
 		}

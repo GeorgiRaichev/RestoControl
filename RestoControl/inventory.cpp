@@ -97,7 +97,6 @@ void issueProduct() {
     inventoryFile.close();
     tempFile.close();
 
-    // Replace the old inventory file with the updated temporary file
     remove("inventory.txt");
     if (rename("temp.txt", "inventory.txt") != 0) {
         cout << "Error: Failed to rename temp file to inventory.txt.\n";
@@ -122,7 +121,6 @@ void processAddInventory(ifstream& inventoryFile, ofstream& tempFile, const stri
         tempFile << currentItem << " " << existingQuantity << endl;
     }
 
-    // If the product was not found, add it to the end
     if (!itemFound) {
         tempFile << itemName << " " << quantity << endl;
         cout << itemName << " added to inventory with quantity " << quantity << endl;
@@ -158,7 +156,6 @@ void addInventory() {
     inventoryFile.close();
     tempFile.close();
 
-    // Replace the old inventory file with the updated temporary file
     remove("inventory.txt");
     if (rename("temp.txt", "inventory.txt") != 0) {
         cout << "Error: Failed to rename temp file to inventory.txt.\n";
