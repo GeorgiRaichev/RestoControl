@@ -18,13 +18,13 @@
 #include "menu.h"
 #include "inventory.h"
 #include "order.h"
+#include "date_utils.h"
 
 using namespace std;
 
 void initializeFiles() {
 
 	ofstream ofs("orders.txt", ios::trunc);
-	ofstream ofs1("report.txt", ios::trunc);
 }
 
 void showWaiterMenu();  
@@ -94,6 +94,7 @@ void selectUserType() {
 
 int main() {
 	initializeFiles();
+	loadDate();
 	selectUserType();
 	int choice;
 	bool exitProgram = false;

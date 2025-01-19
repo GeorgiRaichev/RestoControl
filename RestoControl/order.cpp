@@ -12,58 +12,15 @@
 * This file contains helper functions for solving variant 4 of the course project.
 *
 */
-
 #include <iostream>
 #include <fstream>
 #include <string>
+#include "date_utils.h"
 
 using namespace std;
 
 const int MAX_INGREDIENTS = 100;
 const int MAX_ORDERS = 100;
-
-struct Date {
-    int day;
-    int month;
-    int year;
-};
-
-Date currentDate = { 1, 1, 2025 };
-
-int daysInMonth(int month, int year) {
-    switch (month) {
-    case 1: case 3: case 5: case 7: case 8: case 10: case 12:
-        return 31;
-    case 4: case 6: case 9: case 11:
-        return 30;
-    case 2:
-        if ((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0))
-            return 29;
-        else
-            return 28;
-    default:
-        return 30;
-    }
-}
-
-void incrementDate() {
-    currentDate.day++;
-    int dim = daysInMonth(currentDate.month, currentDate.year);
-    if (currentDate.day > dim) {
-        currentDate.day = 1;
-        currentDate.month++;
-        if (currentDate.month > 12) {
-            currentDate.month = 1;
-            currentDate.year++;
-        }
-    }
-}
-
-void getCurrentDate(int& day, int& month, int& year) {
-    day = currentDate.day;
-    month = currentDate.month;
-    year = currentDate.year;
-}
 
 int determineNextOrderID();
 bool findMenuItem(ifstream& menuFile, const string& itemName, double& price);

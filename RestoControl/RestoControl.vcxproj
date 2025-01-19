@@ -127,17 +127,20 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="date_utils.cpp" />
     <ClCompile Include="inventory.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="menu.cpp" />
     <ClCompile Include="order.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="date_utils.h" />
     <ClInclude Include="inventory.h" />
     <ClInclude Include="menu.h" />
     <ClInclude Include="order.h" />
   </ItemGroup>
   <ItemGroup>
+    <Text Include="date.txt" />
     <Text Include="inventory.txt" />
     <Text Include="menu.txt" />
     <Text Include="orders.txt" />

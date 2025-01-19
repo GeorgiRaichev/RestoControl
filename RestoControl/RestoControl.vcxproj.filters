@@ -27,6 +27,9 @@
     <ClCompile Include="order.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="date_utils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="inventory.h">
@@ -38,6 +41,9 @@
     <ClInclude Include="order.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="date_utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="inventory.txt" />
@@ -45,5 +51,6 @@
     <Text Include="orders.txt" />
     <Text Include="report.txt" />
     <Text Include="recipes.txt" />
+    <Text Include="date.txt" />
   </ItemGroup>
 </Project>
