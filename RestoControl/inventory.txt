@@ -1,6 +1,6 @@
-Dough 300
-Cheese 1000
-TomatoSauce 900
+Dough 700
+Cheese 600
+TomatoSauce 700
 Lettuce 150
 Tomato 300
 Cucumber 200
@@ -11,3 +11,5 @@ Oranges 47
 Pasta 2505
 Cream 1200
 Biscuits 1400
+Chicken 1800
+Flour 2900

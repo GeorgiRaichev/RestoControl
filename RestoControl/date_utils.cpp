@@ -1,3 +1,20 @@
+/**
+*
+* Solution to course project # 1
+* Introduction to programming course
+* Faculty of Mathematics and Informatics of Sofia University
+* Winter semester 2024/2025
+*
+* @author Georgi Raychev
+* @idnumber 0MI0600451
+* @compiler Visual Studio
+*
+* This file contains helper functions for solving variant 1 of the course project.
+*
+*/
+
+
+
 #include "date_utils.h"
 #include <iostream>
 #include <fstream>

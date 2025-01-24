@@ -9,7 +9,7 @@
 * @idnumber 0MI0600451
 * @compiler Visual Studio
 *
-* This file contains helper functions for solving variant 4 of the course project.
+* This file contains helper functions for solving variant 1 of the course project.
 *
 */
 #include <iostream>
